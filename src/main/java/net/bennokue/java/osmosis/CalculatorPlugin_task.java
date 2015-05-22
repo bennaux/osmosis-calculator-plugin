@@ -34,20 +34,33 @@ public class CalculatorPlugin_task implements SinkSource, EntityProcessor {
 
     public CalculatorPlugin_task(String inputAttributesString, String outputAttributeString, String calculationString, String attributesToBeRemovedString) {
         this.inputAttributes = new HashSet<>(Arrays.asList(inputAttributesString.split(",")));
-        if (outputAttributeString.equals("")) {
-            throw new IllegalArgumentException("Output attribute name must not be empty!");
-        }
         this.outputAttribute = outputAttributeString;
-        if (calculationString.equals("")) {
-            throw new IllegalArgumentException("Calculation argument must not be empty!");
-        }
-        this.calculation = this.createExpression(calculationString);
         this.attributesToBeRemoved = new HashSet<>(Arrays.asList(attributesToBeRemovedString.split(",")));
+
+        // Nothing to do
+        if (calculationString.isEmpty() && attributesToBeRemovedString.isEmpty()) {
+            throw new IllegalArgumentException("Neither calculation nor deletion specified!");
+        } // Just calculate
+        else if (!calculationString.isEmpty() && attributesToBeRemovedString.isEmpty()) {
+            if (outputAttributeString.equals("")) {
+                throw new IllegalArgumentException("Output attribute name must not be empty!");
+            }
+            this.calculation = this.createExpression(calculationString);
+        } // Just delete
+        else if (calculationString.isEmpty() && !attributesToBeRemovedString.isEmpty()) {
+            this.calculation = null;
+        } // Calculate AND delete
+        else {
+            if (outputAttributeString.equals("")) {
+                throw new IllegalArgumentException("Output attribute name must not be empty!");
+            }
+            this.calculation = this.createExpression(calculationString);
+        }
     }
-    
+
     private Expression createExpression(String calculationString) {
-        Expression expression = 
-                new ExpressionBuilder(calculationString)
+        Expression expression
+                = new ExpressionBuilder(calculationString)
                 .variables(this.inputAttributes)
                 .build();
         return expression;
@@ -70,13 +83,14 @@ public class CalculatorPlugin_task implements SinkSource, EntityProcessor {
         //backup lat and lon of node entity
         double lat = node.getLatitude();
         double lon = node.getLongitude();
-        // Get all the attributes from the node
-        Collection<Tag> nodeTags = node.getTags();
-        HashMap<String, Double> nodeAttributes = tagCollectionToHashMap(nodeTags);
 
-        // Calculate the output value 
-        // TODO
-        double resultValue = calculateOutputValue(nodeAttributes, node.getId());
+        // Get all the tags from the node
+        Collection<Tag> nodeTags = node.getTags();
+        HashMap<String, Double> nodeAttributes = null;
+        if (this.calculation != null) {
+            // If we want to calculate, we copy the attributes for later
+            nodeAttributes = tagCollectionToHashMap(nodeTags);
+        }
 
         // Remove the output attribute and all attributesToBeRemoved
         HashSet<Tag> tagsToBeRemoved = new HashSet<>();
@@ -95,9 +109,19 @@ public class CalculatorPlugin_task implements SinkSource, EntityProcessor {
             nodeTags.remove(removeTag);
         }
 
-        // Add new output tag
-        nodeTags.add(new Tag(this.outputAttribute, Double.toString(resultValue)));
-        
+        // Do the calculation if needed
+        if (this.calculation != null) {
+            // Also add lat, lon
+            nodeAttributes.put("lat", lat);
+            nodeAttributes.put("lon", lon);
+
+            // Calculate the output value 
+            double resultValue = calculateOutputValue(nodeAttributes, node.getId());
+
+            // Add new output tag
+            nodeTags.add(new Tag(this.outputAttribute, Double.toString(resultValue)));
+        }
+
         // Create new node entity with adjusted attributes
         CommonEntityData ced = new CommonEntityData(
                 node.getId(),
@@ -110,17 +134,15 @@ public class CalculatorPlugin_task implements SinkSource, EntityProcessor {
         // Distribute the new nodecontainer to the following sink
         sink.process(new NodeContainer(new Node(ced, lat, lon)));
     }
-    
+
     private double calculateOutputValue(HashMap<String, Double> nodeAttributes, long nodeId) {
         // Iterate over all input variables and set them at the expression
         for (String inputAttribute : this.inputAttributes) {
             if (inputAttribute.isEmpty()) {
                 continue;
-            }
-            else if (nodeAttributes.containsKey(inputAttribute)) {
+            } else if (nodeAttributes.containsKey(inputAttribute)) {
                 this.calculation.setVariable(inputAttribute, nodeAttributes.get(inputAttribute));
-            }
-            else {
+            } else {
                 log.log(Level.INFO, "Warning! Node {0} has no attribute called {1}", new Object[]{nodeId, inputAttribute});
                 this.calculation.setVariable(inputAttribute, Double.NaN);
             }

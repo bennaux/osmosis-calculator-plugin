@@ -11,17 +11,38 @@
         <maven.compiler.target>1.7</maven.compiler.target>
     </properties>
     <dependencies>
+        <!-- Compile scope dependencies -->
+        <dependency>
+            <groupId>net.objecthunter</groupId>
+            <artifactId>exp4j</artifactId>
+            <version>0.4.5</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- Provided scope dependencies -->
         <dependency>
             <groupId>org.openstreetmap.osmosis</groupId>
             <artifactId>osmosis-core</artifactId>
             <version>0.43.1</version>
             <scope>provided</scope>
         </dependency>
+        <!-- Test scope dependencies -->
+        <!--<dependency>
+            <groupId>crosby.binary</groupId>
+            <artifactId>osmosis</artifactId>
+            <version>0.40.1</version>
+            <scope>test</scope>
+        </dependency>-->
         <dependency>
-            <groupId>net.objecthunter</groupId>
-            <artifactId>exp4j</artifactId>
-            <version>0.4.5</version>
-            <scope>compile</scope>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.10</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openstreetmap.osmosis</groupId>
+            <artifactId>osmosis-xml</artifactId>
+            <version>0.43.1</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
