@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.bennokue.java</groupId>
     <artifactId>osmosis-calculator-plugin</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -26,12 +26,6 @@
             <scope>provided</scope>
         </dependency>
         <!-- Test scope dependencies -->
-        <!--<dependency>
-            <groupId>crosby.binary</groupId>
-            <artifactId>osmosis</artifactId>
-            <version>0.40.1</version>
-            <scope>test</scope>
-        </dependency>-->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -46,7 +40,15 @@
         </dependency>
     </dependencies>
     <build>
+        <!-- Include resources with token replacing in e.g. plugin.xml -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
+            <!-- Build the jar with dependencies -->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
@@ -66,5 +68,4 @@
             </plugin>
         </plugins>
     </build>
-    
 </project>

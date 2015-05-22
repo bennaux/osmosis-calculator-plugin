@@ -1,21 +1,13 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-/* TODO Benno Javadoc */
 package net.bennokue.java.osmosis;
 
 import java.io.File;
 import java.net.URI;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
+ * Perform a few tests with the plugin: Load demo data, perform calculation and
+ * compare the expected values with the XPath-derived results.
  *
  * @author bennokue
  */
@@ -27,28 +19,17 @@ public class CalculatorPluginTest {
      * will be declared equal if the difference is smaller than this value.
      */
     private static final double doubleEqualityThreshold = 0.00001;
-    private static final boolean deleteTemporaryFiles = true;
-
-    public CalculatorPluginTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() {
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-    }
-
-    @Before
-    public void setUp() {
-    }
-
-    @After
-    public void tearDown() {
-    }
+    /**
+     * Set this to false if you want to have a look at the generated osm files
+     * for yourself. They will be created in your system's temp directory.
+     */
+    public static final boolean deleteTemporaryFiles = true;
 
     @Test
+    /**
+     * Test the insertion of a constant value to a new tag. Demo data used is a
+     * JOSM download of a small area in Munich.
+     */
     public void testForConstant() throws Exception {
         // This test sets for each node the tag "constantTest" to 13
         String[] expectedResult = new String[]{
@@ -59,6 +40,10 @@ public class CalculatorPluginTest {
     }
 
     @Test
+    /**
+     * Test the copying of the nodes' latency to a new tag. Demo data used is a
+     * JOSM download of a small area in Munich.
+     */
     public void testForVariable() throws Exception {
         // This test sets for each node the tag "varTest" to the node's lat
         String[] expectedResult = new String[]{
@@ -71,6 +56,10 @@ public class CalculatorPluginTest {
     }
 
     @Test
+    /**
+     * Performs a simple calculation test. Demo data used is a JOSM download of
+     * a small area in Munich.
+     */
     public void testForVarPlus7() throws Exception {
         // This test sets for each node the tag "varTest" to the node's lat + 7
         String[] expectedResult = new String[]{
@@ -83,6 +72,10 @@ public class CalculatorPluginTest {
     }
 
     @Test
+    /**
+     * Performs a not-so-simple-but-still-simple calculation test. Demo data
+     * used is a JOSM download of a small area in Munich.
+     */
     public void testForVarMinusVar() throws Exception {
         // This test sets the new tag "minusTest" for each node to lat-lon
         String[] expectedResult = new String[]{
@@ -95,6 +88,9 @@ public class CalculatorPluginTest {
     }
 
     @Test
+    /**
+     * Tests the use case the plugin was made for.  Demo data used is a JOSM download of a small area in Munich.
+     */
     public void testForAverageVar() throws Exception {
         /*
          * This test sets the new tag "averagePosition" for each node to the
@@ -110,6 +106,9 @@ public class CalculatorPluginTest {
     }
 
     @Test
+    /**
+     * Tests tag deletion.  Demo data used is a JOSM download of a small area in Munich, anriched with SRTM data using Franz Graf's SRTM plugin.
+     */
     public void testForTagDeletion() throws Exception {
         // This test deletes the ele tag
         // First check if there actually are ele tags
@@ -127,6 +126,9 @@ public class CalculatorPluginTest {
     }
 
     @Test
+    /**
+     * Tests calculation AND tag deletion. Demo data used is a JOSM download of a small area in Munich, anriched with SRTM data using Franz Graf's SRTM plugin.
+     */
     public void testForCalculationAndDeletion() throws Exception {
         /*
          * Takes the ele tag, saves it, converted to foot, in the tag "foot",
@@ -148,17 +150,57 @@ public class CalculatorPluginTest {
                 new String[]{"/osm/node/tag[@k=\"foot\"]/@v", "/osm/node/tag[@k=\"ele\"]/@v"});
     }
 
-    private static void conductTest(String inputFileString, String inputAttributes, String outputattribute, String calculation, String removeAttributes, String[] expectedResult, String xpathQuery) throws Exception {
-        conductTest(inputFileString, inputAttributes, outputattribute, calculation, removeAttributes, new String[][]{expectedResult}, new String[]{xpathQuery});
+    /**
+     * Same as
+     * {@link #conductTest(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String[][], java.lang.String[]) conductTest(...)},
+     * but with only one XPath query and only one resulting String[].
+     *
+     * @param inputFileString The demo file to be used.
+     * @param inputTags See
+     * {@link CalculatorPlugin_task#CalculatorPlugin_task(java.lang.String, java.lang.String, java.lang.String, java.lang.String) CalculatorPlugin_task(...)}.
+     * @param outputTag See
+     * {@link CalculatorPlugin_task#CalculatorPlugin_task(java.lang.String, java.lang.String, java.lang.String, java.lang.String) CalculatorPlugin_task(...)}.
+     * @param calculation See
+     * {@link CalculatorPlugin_task#CalculatorPlugin_task(java.lang.String, java.lang.String, java.lang.String, java.lang.String) CalculatorPlugin_task(...)}.
+     * @param removeTags See
+     * {@link CalculatorPlugin_task#CalculatorPlugin_task(java.lang.String, java.lang.String, java.lang.String, java.lang.String) CalculatorPlugin_task(...)}.
+     * @param expectedResult The expected results of the XPath query.
+     * @param xpathQuery The XPath query to check.
+     * @throws Exception If anything goes wrong.
+     */
+    private static void conductTest(String inputFileString, String inputTags, String outputTag, String calculation, String removeTags, String[] expectedResult, String xpathQuery) throws Exception {
+        conductTest(inputFileString, inputTags, outputTag, calculation, removeTags, new String[][]{expectedResult}, new String[]{xpathQuery});
     }
 
-    private static void conductTest(String inputFileString, String inputAttributes, String outputattribute, String calculation, String removeAttributes, String[][] expectedResults, String[] xpathQueries) throws Exception {
+    /**
+     * Load an OSM file with OSMOSIS, perform a calculation and store the
+     * results to a temporary OSM file, then evaluate some XPath queries onto
+     * the output file and compare the result arrays to the ones provided by the
+     * test / data author.
+     *
+     * @param inputFileString The demo file to be used.
+     * @param inputTags See
+     * {@link CalculatorPlugin_task#CalculatorPlugin_task(java.lang.String, java.lang.String, java.lang.String, java.lang.String) CalculatorPlugin_task(...)}.
+     * @param outputTag See
+     * {@link CalculatorPlugin_task#CalculatorPlugin_task(java.lang.String, java.lang.String, java.lang.String, java.lang.String) CalculatorPlugin_task(...)}.
+     * @param calculation See
+     * {@link CalculatorPlugin_task#CalculatorPlugin_task(java.lang.String, java.lang.String, java.lang.String, java.lang.String) CalculatorPlugin_task(...)}.
+     * @param removeTags See
+     * {@link CalculatorPlugin_task#CalculatorPlugin_task(java.lang.String, java.lang.String, java.lang.String, java.lang.String) CalculatorPlugin_task(...)}.
+     * @param expectedResults The expected results for each xpathQuery on the
+     * final document as String[], bundled as a String[][].
+     * @param xpathQueries The XPath queries that have to be performed at the
+     * final document, each one of the Strings in this array has to have its
+     * result String[] at {@code expectedResults}.
+     * @throws Exception If anything goes wrong.
+     */
+    private static void conductTest(String inputFileString, String inputTags, String outputTag, String calculation, String removeTags, String[][] expectedResults, String[] xpathQueries) throws Exception {
         File inputFile = new File(new URI(CalculatorPluginTest.class.getResource(inputFileString).toString()).getSchemeSpecificPart());
         File outputFile = java.io.File.createTempFile("osmosiscalctest", null, null);
         if (deleteTemporaryFiles) {
             outputFile.deleteOnExit();
         }
-        OsmosisRunner runner = new OsmosisRunner(inputFile, outputFile, inputAttributes, outputattribute, calculation, removeAttributes);
+        OsmosisRunner runner = new OsmosisRunner(inputFile, outputFile, inputTags, outputTag, calculation, removeTags);
         runner.runOsmosis();
         if (expectedResults.length != xpathQueries.length) {
             throw new IllegalArgumentException("Please give as many results as tests!");
@@ -169,6 +211,17 @@ public class CalculatorPluginTest {
         }
     }
 
+    /**
+     * Compare two String arrays that contain stringified double values using
+     * {@link #compareStringDoubles(java.lang.String, java.lang.String) compareStringDoubles()}.
+     * If {@code arrayExpected}'s length {@code N} smaller than
+     * {@code arrayGiven}'s length {@code M}, only the first {@code N} elements
+     * will be compared.
+     *
+     * @param arrayExpected The array with the correct values.
+     * @param arrayGiven The array with the values derived from the tested
+     * class.
+     */
     private static void compareArraySubsets(String[] arrayExpected, String[] arrayGiven) {
         assertTrue("Tested array should be >= " + arrayExpected.length + " but has length " + arrayGiven.length, arrayGiven.length >= arrayExpected.length);
 
@@ -177,16 +230,29 @@ public class CalculatorPluginTest {
         }
     }
 
+    /**
+     * Compare two Strings that should contain doubles.
+     *
+     * @param expectedString The correct String value.
+     * @param givenString The String value derived from the tested class.
+     * @return {@code true} if both are {@code null} / if they are both doubles
+     * with a difference {@code <=} {@link #doubleEqualityThreshold} / if a
+     * NumberFormatException occurred but they match as strings.
+     */
     private static boolean compareStringDoubles(String expectedString, String givenString) {
         if (null == expectedString && null == givenString) {
             return true;
+        }
+        if ((null == expectedString && null != givenString) 
+                || (null != expectedString && null == givenString)) {
+            return false;
         }
         try {
             double expected = Double.parseDouble(expectedString);
             double given = Double.parseDouble(givenString);
             return Math.abs(expected - given) <= doubleEqualityThreshold;
         } catch (NumberFormatException e) {
-            return expectedString.equals(givenString);
+            return givenString.equals(expectedString);
         }
     }
 }
