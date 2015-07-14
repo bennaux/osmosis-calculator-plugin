@@ -26,7 +26,7 @@ The task name for this plugin is `calculate-node-tag`.
 
 - Just remove the `ele` and `height` tags:
 
-        osmosis --read-xml inputFile.osm --calculate-node-tag removeTags=height --write-xml outputFile.osm
+        osmosis --read-xml inputFile.osm --calculate-node-tag removeTags=height,ele --write-xml outputFile.osm
 
 - Calculate examplary nonsense (average of lat and lon):
 
